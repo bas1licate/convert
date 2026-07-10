@@ -34,7 +34,8 @@ class bminforawHandler implements FormatHandler {
     const nasty = ((mean) => new UInt16Array([mean,mean>>16]))
     const toui8 = ((base) => new Uint8Array(base.buffer))
     const outputFiles: FileData[] = [];
-    for (const File of inputFiles) {
+    for (const file of inputFiles) {
+      if (file.bytes.byteLength > 0xFFFFFFFF) {throw new RangeError("too much data"); continue}
       let bytes = new Uint8Array(file.bytes);
       let isize = bytes.reverse().byteLength; let bd,c;
       switch (0) {
