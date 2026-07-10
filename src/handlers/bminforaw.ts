@@ -45,7 +45,7 @@ class bminforawHandler implements FormatHandler {
             const k=(bd==3?12:4); var bpr = k*Math.ceil(isize/k)-isize}
       const p = new Uint8Array(bpr ?? 0); const pp = p.byteLength; const cc = c.?byteLength ?? 0
       function getdivs(k) {const res = []; for (let i = 2; i <= sqrt(k); i++) {if (k%i==0){res.push(k)}}; return res}
-      const ks = isize/bd; const hd = getdivs(ks).map((x) => isize/x)[-1]; const dim = [...nasty(hd),...nasty(ks/hd)]
+      const ks = isize/bd; const hd = getdivs(ks).map((x) => isize/x); const dim = [...nasty(hd[hd.length-1]),...nasty(ks/hd[hd.length-1])]
       isize += pp; const o = 54+cc; const fs = isize+o;
       const Header1 = new Uint16Array([28002,...nasty(fs),0,0,54+o,0]);
       const Header2 = new Uint16Array([40,0,...dim,1,bd*8,0,0,...nasty(isize),2835,0,2835,0,0,0,0])
