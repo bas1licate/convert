@@ -31,21 +31,30 @@ class bminforawHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     // once upon a time, there was a boy
-    nasty = ((mean) => [mean&65535,mean>>16&65535])
-    toui8 = ((base) => new Uint8Array(base.buffer))
+    const nasty = ((mean) => [mean&65535,mean>>16&65535])
+    const toui8 = ((base) => new Uint8Array(base.buffer))
     const outputFiles: FileData[] = [];
     for (const File of inputFiles) {
       let bytes = new Uint8Array(file.bytes);
-      const isize = bytes.reverse().byteLength
-      if (isize%4==0) {bdepth = 4}
-      else {if (isize%3==0) {bdepth = 3}else if (isize%2==0) {bdepth = 2} else {bdepth = 1}
-            k=(bdepth==3?12:4); bpr = k*Math.ceil(isize/k)-isize}
-      if (bdepth == 1) {c = new Uint8Array(1024); for (let i = 0; i < 256; i++) {c.set([i,i,i,0],4*i)}}
-      p = new Uint8Array(bpr ?? 0); pp = p.byteLength; cc = c.?byteLength ?? 0
-      const Header1 = new Uint16Array([28002,...nasty(isize+54+pp+cc),0,0,54+cc,0]);
-      const Header2 = new Uint16Array([40,0,-1,-2,-1,-2,1,bdepth*8,0,0,...nasty(isize+pp),2835,0,2835,0,0,0,0])
-      // dimensions: Header2[2:4]*Header2[4:6] = Header2[10:12] // as we are converting from raw rgb these will be defined semi-arbitrarily
-      // outputFiles.push(blablabla)
+      let isize = bytes.reverse().byteLength; let bd;
+      if (isize%4==0) {bd = 4}
+      else {switch (0) {
+        case isize%3: bd=3;break
+        case isize%2: bd=2;break
+        default: bd = 1; var c = new Uint8Array(1024); for (let i = 0; i < 256; i++) {c.set([i,i,i,0],4*i)}}
+            const k=(bd==3?12:4); var bpr = k*Math.ceil(isize/k)-isize}
+      const p = new Uint8Array(bpr ?? 0); const pp = p.byteLength; const cc = c.?byteLength ?? 0
+      function getdivs(k) {const res = []; for (let i = 2; i <= sqrt(k); i++) {if (k%i==0){res.push(k)}}; return res}
+      const ks = isize/bd; const hd = getdivs(ks).map((x) => isize/x)[-1]; const dim = [...nasty(hd),...nasty(ks/hd)]
+      isize += pp; const o = 54+cc; const fs = isize+o;
+      const Header1 = new Uint16Array([28002,...nasty(fs),0,0,54+o,0]);
+      const Header2 = new Uint16Array([40,0,...dim,1,bd*8,0,0,...nasty(isize),2835,0,2835,0,0,0,0])
+      // should mention dimensions are/were defined semi-arbitrarily due to operating from raw rgb
+      const full = new Uint8Array(fs)
+      full.set(toui8(Header1),0); full.set(toui8(Header2),10);
+      full.set(tou18(c??new Int8Array(0)),54)
+      full.set(p,o); full.set(bytes,pp+o)
+      outputFiles.push(name: file.name.split(".").slice(0, -1).join(".") + ".bmp", bytes: full)
     }
     // i'm so tired of trying so hard and not getting it right
     return outputFiles;
