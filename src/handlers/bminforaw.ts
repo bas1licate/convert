@@ -48,10 +48,10 @@ class bminforawHandler implements FormatHandler {
       const k=(bd==3?12:4); const bpr = k*Math.ceil(isize/k)-isize
       try {let d = [...c]}
       catch (e) {console.log("caught",e); var c = new Uint8Array(0)}
-      const p = new Uint8Array(bpr); const cc = c.byteLength;
+      const p = new Uint8Array(bpr)
       function getdivs(k) {const res = []; for (let i = 2; i <= sqrt(k); i++) {if (k%i==0) {res.push(k)}}; return res}
       const ks = isize/bd; const hd = getdivs(ks).map((x) => isize/x); const dim = [hd[hd.length-1],ks/hd[hd.length-1]]
-      isize += bpr*dim[1]; const o = 54+cc; const fs = isize+o;
+      isize += bpr*dim[1]; const o = 54+c.byteLength; const fs = isize+o;
       if (fs > 0xFFFFFFFF) {throw new RangeError("file would be too large"); continue}
       const Header1 = new Uint16Array([19778,...nasty(fs),0,0,...nasty(54+o),0]);
       const Header2 = new Uint16Array([40,0,...nasty(dim[0]),...nasty(dim[1]),1,bd*8,0,0,...nasty(isize),2835,0,2835,0,0,0,0])
