@@ -40,7 +40,7 @@ class bminforawHandler implements FormatHandler {
                                                             even on higher-end devices")}
       else if (file.bytes.byteLength > 0x7FFFFFFF) {console.warn("this file is very large. conversion may not work on lower-end devices.")}
       let bytes = new Uint8Array(file.bytes);
-      let isize = bytes.reverse().byteLength; let bd,c;
+      let isize = bytes.reverse().byteLength; let bd;
       switch (0) {
         case isize%3: bd=3;break
         case isize%2: bd=2;break
