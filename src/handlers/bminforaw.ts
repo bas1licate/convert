@@ -31,7 +31,7 @@ class bminforawHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     // once upon a time, there was a boy
-    const nasty = ((mean) => new UInt16Array([mean,mean>>16]))
+    const nasty = ((mean) => new Uint16Array([mean,mean>>16]))
     const toui8 = ((base) => new Uint8Array(base.buffer))
     const outputFiles: FileData[] = [];
     for (const file of inputFiles) {
