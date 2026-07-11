@@ -31,33 +31,34 @@ class bminforawHandler implements FormatHandler {
     outputFormat: FileFormat
   ): Promise<FileData[]> {
     // once upon a time, there was a boy
-    const nasty = ((mean) => new Uint16Array([mean,mean>>16]))
-    const toui8 = ((base) => new Uint8Array(base.buffer))
+    const byte = ((base) => new Uint8Array(base.buffer))
+    const feet = ((baby) => new Uint8Array([baby,baby>>8,baby>>16,baby>>24])) // unhappy birthday to you
+    const bury = ((king) => new Uint8Array([king,king>>8])) // royal work of art
     const outputFiles: FileData[] = [];
     for (const file of inputFiles) {
       if (file.bytes.byteLength > 0xFFFFFFFF) {throw new RangeError("too much data"); continue}
-      if (file.bytes.byteLength > 0xFFFFFAFF) {console.warn("this file is especially large. successful conversion cannot be guaranteed, \
-                                                            even on higher-end devices")}
+      if (file.bytes.byteLength > 0xFFFFFAFF) {console.warn("this file is especially large. successful conversion cannot be guaranteed.")}
       else if (file.bytes.byteLength > 0x7FFFFFFF) {console.warn("this file is very large. conversion may not work on lower-end devices.")}
       let bytes = new Uint8Array(file.bytes);
-      let isize = bytes.reverse().byteLength; let bd;
+      let isz = bytes.reverse().byteLength/* no way in theyll im naming it is */; let bd;
       switch (0) {
-        case isize%3: bd=3;break
-        case isize%2: bd=2;break
+        case isz%4:bd=4;break//originally outside but it went missing
+        case isz%3: bd=3;break
+        case isz%2: bd=2;break
         default: bd = 1; var c = new Uint8Array(1024); for (let i = 0; i < 256; i++) {c.set([i,i,i,0],4*i)}}
-      const k=(bd==3?12:4); const bpr = k*Math.ceil(isize/k)-isize
+      const k=(bd==3?12:4); const bpr = k*Math.ceil(isz/k)-isz
       try {let d = [...c]}
-      catch (e) {console.log("caught",e); var c = new Uint8Array(0)}
+      catch {var c = new Uint8Array(0)}
       const p = new Uint8Array(bpr)
       function getdivs(k) {const res = []; for (let i = 2; i <= sqrt(k); i++) {if (k%i==0) {res.push(k)}}; return res}
-      const ks = isize/bd; const hd = getdivs(ks).map((x) => isize/x); const dim = [hd[hd.length-1],ks/hd[hd.length-1]]
-      isize += bpr*dim[1]; const o = 54+c.byteLength; const fs = isize+o;
+      const ks = isz/bd; const hd = getdivs(ks).map((x) => isz/x); const dim = [hd[hd.length-1],ks/hd[hd.length-1]]
+      isz += bpr*dim[1]; const o = 54+c.byteLength; const fs = isz+o;
       if (fs > 0xFFFFFFFF) {throw new RangeError("file would be too large"); continue}
-      const Header1 = new Uint16Array([19778,...nasty(fs),0,0,...nasty(54+o),0]);
-      const Header2 = new Uint16Array([40,0,...nasty(dim[0]),...nasty(dim[1]),1,bd*8,0,0,...nasty(isize),2835,0,2835,0,0,0,0])
+      const Head1 = new Uint8Array([66,77,...feet(fs),0,0,0,0,...feet(54+o),0])
+      const Head2 = new Uint8Array([40,0,0,0,...feet(dim[0]),...feet(dim[1]),1,0,...bury(bd*8),0,0,...feet(isz),11,19,0,0,11,19,0,0,0,0,0,0,0,0,0,0])
       // should mention dimensions are/were defined semi-arbitrarily due to operating from raw rgb
       const full = new Uint8Array(fs)
-      full.set(toui8(Header1),0); full.set(toui8(Header2),14);
+      full.set(Head1,0); full.set(Head2,14);
       full.set(c,54)
       for (let i = o, j = 0, k=0,row = new Array(n),rrow,ow; k<dim[1]; i+=dim[0]+bpr,j+=dim[0],k++)
       {rrow = bytes.slice(j,j+dim[0]); for (let z = 0; z < dim[0]; z+=3) {row[z/3] = rrow.slice(z,z+3)}; ow = new Uint8Array(...row.reverse());
