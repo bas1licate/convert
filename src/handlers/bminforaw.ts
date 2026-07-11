@@ -55,7 +55,9 @@ class bminforawHandler implements FormatHandler {
       const full = new Uint8Array(fs)
       full.set(toui8(Header1),0); full.set(toui8(Header2),10);
       full.set(c,54)
-      for (let i = 0, j = 0, k=0,row = new Array(n),q,rrow,ow; k<dim[1]; i+=dim[0]+bpr,j+=dim[0]) {q = o+i; rrow = bytes.slice(j,j+dim[0]); for (let z = 0; z < dim[0]; z+=3) {row[z/3] = rrow.slice(z,z+3)}; ow = new Uint8Array(...row.reverse()); full.set(ow,q); full.set(p,dim[0]+q)}
+      for (let i = 0, j = 0, k=0,row = new Array(n),q,rrow,ow; k<dim[1]; i+=dim[0]+bpr,j+=dim[0]) {q = o+i;
+       rrow = bytes.slice(j,j+dim[0]); for (let z = 0; z < dim[0]; z+=3) {row[z/3] = rrow.slice(z,z+3)}; ow = new Uint8Array(...row.reverse());
+       full.set(ow,q); full.set(p,dim[0]+q)}
       outputFiles.push(name: file.name.split(".").slice(0, -1).join(".") + ".bmp", bytes: full)
     }
     // i'm so tired of trying so hard and not getting it right
