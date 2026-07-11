@@ -36,6 +36,9 @@ class bminforawHandler implements FormatHandler {
     const outputFiles: FileData[] = [];
     for (const file of inputFiles) {
       if (file.bytes.byteLength > 0xFFFFFFFF) {throw new RangeError("too much data"); continue}
+      if (file.bytes.byteLength > 0xFFFFFAFF) {console.warn("this file is especially large. successful conversion cannot be guaranteed, \
+                                                            even on higher-end devices")}
+      else if (file.bytes.byteLength > 0x7FFFFFFF) {console.warn("this file is very large. conversion may not work on lower-end devices.")}
       let bytes = new Uint8Array(file.bytes);
       let isize = bytes.reverse().byteLength; let bd,c;
       switch (0) {
@@ -49,15 +52,16 @@ class bminforawHandler implements FormatHandler {
       function getdivs(k) {const res = []; for (let i = 2; i <= sqrt(k); i++) {if (k%i==0) {res.push(k)}}; return res}
       const ks = isize/bd; const hd = getdivs(ks).map((x) => isize/x); const dim = [hd[hd.length-1],ks/hd[hd.length-1]]
       isize += bpr*dim[1]; const o = 54+cc; const fs = isize+o;
+      if (fs > 0xFFFFFFFF) {throw new RangeError("file would be too large"); continue}
       const Header1 = new Uint16Array([19778,...nasty(fs),0,0,...nasty(54+o),0]);
       const Header2 = new Uint16Array([40,0,...nasty(dim[0]),...nasty(dim[1]),1,bd*8,0,0,...nasty(isize),2835,0,2835,0,0,0,0])
       // should mention dimensions are/were defined semi-arbitrarily due to operating from raw rgb
       const full = new Uint8Array(fs)
       full.set(toui8(Header1),0); full.set(toui8(Header2),14);
       full.set(c,54)
-      for (let i = 0, j = 0, k=0,row = new Array(n),q,rrow,ow; k<dim[1]; i+=dim[0]+bpr,j+=dim[0]) {q = o+i;
-       rrow = bytes.slice(j,j+dim[0]); for (let z = 0; z < dim[0]; z+=3) {row[z/3] = rrow.slice(z,z+3)}; ow = new Uint8Array(...row.reverse());
-       full.set(ow,q); full.set(p,dim[0]+q)}
+      for (let i = o, j = 0, k=0,row = new Array(n),q,rrow,ow; k<dim[1]; i+=dim[0]+bpr,j+=dim[0])
+      {rrow = bytes.slice(j,j+dim[0]); for (let z = 0; z < dim[0]; z+=3) {row[z/3] = rrow.slice(z,z+3)}; ow = new Uint8Array(...row.reverse());
+       full.set(ow,i); full.set(p,dim[0]+i)}
       outputFiles.push(name: file.name.split(".").slice(0, -1).join(".") + ".bmp", bytes: full)
     }
     // i'm so tired of trying so hard and not getting it right
