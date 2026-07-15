@@ -5,7 +5,7 @@ import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class bminforawHandler implements FormatHandler {
 
-  public name: string = "BITMAPINFOraw";
+  public name: string = "BITMAPINFO";
   public supportedFormats: FileFormat[] = [
     CommonFormats.BMP.builder("bmp").markLossless().allowTo(),
     {
