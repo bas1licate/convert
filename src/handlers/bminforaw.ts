@@ -42,7 +42,6 @@ class bminforawHandler implements FormatHandler {
       let bytes = new Uint8Array(file.bytes);
       let isz = bytes.reverse().byteLength/* no way in theyll im naming it is */; let bd;
       switch (0) {
-        case isz%4:bd=4;break//originally outside but it went missing
         case isz%3: bd=3;break
         case isz%2: bd=2;break
         default: bd = 1; var c = new Uint8Array(1024); for (let i = 0; i < 256; i++) {c.set([i,i,i,0],4*i)}}
@@ -60,8 +59,8 @@ class bminforawHandler implements FormatHandler {
       const full = new Uint8Array(fs)
       full.set(Head1,0); full.set(Head2,14);
       full.set(c,54)
-      for (let i = o, j = 0, k=0,row = new Array(n),rrow; k<dim[1]; i+=dim[0]+bpr,j+=dim[0],k++)
-      {rrow = bytes.slice(j,j+dim[0]); for (let z = 0; z < dim[0]; z+=3) {row[z/3] = rrow.slice(z,z+3)};
+      for (let i = o, j = 0, k=0,row = new Array(dim[0]/bd),rrow; k<dim[1]; i+=dim[0]+bpr,j+=dim[0],k++)
+      {rrow = bytes.slice(j,j+dim[0]); for (let z = 0; z < dim[0]; z+=bd) {row[z/bd] = rrow.slice(z,z+bd)};
        full.set(new Uint8Array(row.reverse().flat()),i); full.set(p,dim[0]+i)}
       outputFiles.push(name: file.name.split(".").slice(0, -1).join(".") + ".bmp", bytes: full)
     }
