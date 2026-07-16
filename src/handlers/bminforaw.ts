@@ -53,8 +53,8 @@ class bminforawHandler implements FormatHandler {
       const ks = isz/bd; const hd = getdivs(ks).map((x) => isz/x); const dim = [hd[hd.length-1],ks/hd[hd.length-1]]
       isz += bpr*dim[1]; const o = 54+c.byteLength; const fs = isz+o;
       if (fs > 0xFFFFFFFF) {throw new RangeError("file would be too large"); continue}
-      const Head1 = new Uint8Array([66,77,...feet(fs),0,0,0,0,...feet(54+o),0])
-      const Head2 = new Uint8Array([40,0,0,0,...feet(dim[0]),...feet(dim[1]),1,0,...bury(bd*8),0,0,...feet(isz),11,19,0,0,11,19,0,0,0,0,0,0,0,0,0,0])
+      const Head1 = new Uint8Array([66,77,...feet(fs),0,0,0,0,...feet(o)])
+      const Head2 = new Uint8Array([40,0,0,0,...feet(dim[0]),...feet(dim[1]),1,0,...bury(bd*8),0,0,...feet(isz),11,19,0,0,11,19,0,0,0,0,0,0,0,0,0,0,0,0])
       // should mention dimensions are/were defined semi-arbitrarily due to operating from raw rgb
       const full = new Uint8Array(fs)
       full.set(Head1,0); full.set(Head2,14);
