@@ -50,7 +50,7 @@ class bminforawHandler implements FormatHandler {
       try {let d = [...c]}
       catch {var c = new Uint8Array(0)}
       const p = new Uint8Array(bpr)
-      function getdivs(k) {const res = []; for (let i = 2; i <= sqrt(k); i++) {if (k%i==0) {res.push(k)}}; return res}
+      function getdivs(k) {const res = []; for (let i = 2; i <= Math.sqrt(k); i++) {if (k%i==0) {res.push(k)}}; return res}
       const ks = isz/bd; const hd = getdivs(ks).map((x) => isz/x); const dim = [hd[hd.length-1],ks/hd[hd.length-1]]
       isz += bpr*dim[1]; const o = 54+c.byteLength; const fs = isz+o;
       if (fs > 0xFFFFFFFF) {throw new RangeError("file would be too large"); continue}
