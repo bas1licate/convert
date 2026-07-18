@@ -24,7 +24,7 @@ class bminforawHandler implements FormatHandler {
   async init () {
     this.ready = true;
   }
-private const men = new Uint8Array("[object Promise]".split("").map(x => x.charCodeAt(0)))
+const men = new Uint8Array("[object Promise]".split("").map(x => x.charCodeAt(0)))
   async doConvert (
     inputFiles: FileData[],
     inputFormat: FileFormat,
