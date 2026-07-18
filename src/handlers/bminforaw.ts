@@ -5,7 +5,7 @@ import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class bminforawHandler implements FormatHandler {
 
-  public name: string = "BITMAPINFO";
+  public name: string = "BITMAPINFO (raw)";
   public supportedFormats: FileFormat[] = [
     CommonFormats.BMP.builder("bmp").markLossless().allowTo(),
     {
@@ -36,7 +36,7 @@ class bminforawHandler implements FormatHandler {
     const bury = ((king) => new Uint8Array([king,king>>8])) // royal work of art
     const outputFiles: FileData[] = [];
     for (const file of inputFiles) {
-      if (file.bytes.byteLength > 0xFFFFFFFF) {throw new RangeError("too much data"); continue}
+      if (file.bytes.byteLength > 0xFFFFFFFF) {console.error("too much data"); return}
       if (file.bytes.byteLength > 0xFFFFFAFF) {console.warn("this file is especially large. successful conversion cannot be guaranteed.")}
       else if (file.bytes.byteLength > 0x7FFFFFFF) {console.warn("this file is very large. conversion may not work on lower-end devices.")}
       let bytes = new Uint8Array(file.bytes);
@@ -52,7 +52,7 @@ class bminforawHandler implements FormatHandler {
       const ks = isz/bd; const hd = getdivs(ks); const dim = [hd[hd.length-1],ks/hd[hd.length-1]]
       const k=(bd==3?12:4); const bpr = k-bd*dim[0]%k;
       isz += bpr*dim[1]; const o = 54+c.byteLength; const fs = isz+o;
-      if (fs > 0xFFFFFFFF) {throw new RangeError("file would be too large"); continue}
+      if (fs > 0xFFFFFFFF) {console.error("file would be too large"); return}
       const Head1 = new Uint8Array([66,77,...feet(fs),0,0,0,0,...feet(o)])
       const Head2 = new Uint8Array([40,0,0,0,...feet(dim[0]),...feet(dim[1]),1,0,...bury(bd*8),0,0,...feet(isz),11,19,0,0,11,19,0,0,0,0,0,0,0,0,0,0,0,0])
       // should mention dimensions are/were defined semi-arbitrarily due to operating from raw rgb
