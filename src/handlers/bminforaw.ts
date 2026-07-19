@@ -47,10 +47,10 @@ const men = new Uint8Array("[object Promise]".split("").map(x => x.charCodeAt(0)
         default: bd = 1; var c = new Uint8Array(1024); for (let i = 0; i < 256; i++) {c.set([i,i,i,0],4*i)}}
       try {let d = [...c]}
       catch {var c = new Uint8Array(0)}
-      const p = new Uint8Array(bpr)
       function getdivs(k) {const res = []; for (let i = 2; i <= Math.sqrt(k); i++) {if (k%i==0) {res.push(k)}}; return res}
       const ks = isz/bd; const hd = getdivs(ks); const dim = [hd[hd.length-1],ks/hd[hd.length-1]]
       const k=(bd==3?12:4); const bpr = k-bd*dim[0]%k;
+      const p = new Uint8Array(bpr)
       isz += bpr*dim[1]; const o = 54+c.byteLength; const fs = isz+o;
       if (fs > 0xFFFFFFFF) {console.error("file would be too large"); outputFiles.push(name: file.name.split(".").slice(0, -1).join(".") + ".bmp", bytes: men); continue}
       const Head1 = new Uint8Array([66,77,...feet(fs),0,0,0,0,...feet(o)])
