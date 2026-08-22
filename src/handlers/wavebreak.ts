@@ -4,7 +4,7 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class wavebreakHandler implements FormatHandler {
-  public supportAnyInput = true; // can't find any defined octet-stream formats so this will have to do
+  public supportAnyInput = true; // can't find any defined octet-stream formats or audio sample formats (audial equivalents of .rgb/.rgba) so this will have to do
   public name: string = "WAVEBREAK";
   public supportedFormats: FileFormat[] = [
     CommonFormats.WAV.builder("wav").allowTo().allowFrom(false) // allowfrom explicitly false to hopefully prevent infinite loops
