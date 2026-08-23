@@ -27,7 +27,7 @@ class wavebreakHandler implements FormatHandler {
     if (file.bytes.byteLength > 0xFFFFFF00) {console.error("data too large. maximum size 4,294,967,040 bytes."); continue}
     if (file.bytes.byteLength > 0x7FFFFF00) {console.warn("data very large. successful conversion cannot be guaranteed.")}
     const sz = file.bytes.byteLength
-    const head1 = new Uint16Array([18770,17990,...split32(sz+36),16727,17550])
+    const head1 = new Uint16Array([18770,17990,...split32(sz+36),16727,17750])
     const head2 = new Uint16Array([28006,8308,16,0,1,1,44100,0,22664,1,2,16])
     const head3 = new Uint16Array([24932,24948,...split32(sz)])
     const r = new Uint8Array(sz+44);
