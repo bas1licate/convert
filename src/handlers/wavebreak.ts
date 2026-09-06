@@ -33,11 +33,11 @@ class wavebreakHandler implements FormatHandler {
     for (const file of inputFiles) {
     if (file.bytes.byteLength > 0xFFFFFF00) {console.error("data too large. maximum size 4,294,967,040 bytes."); continue}
     if (file.bytes.byteLength > 0x7FFFFF00) {console.warn("data very large. successful conversion cannot be guaranteed.")}
-    const sz = file.bytes.byteLength
+    const sz = 2*Math.ceil(file.bytes.byteLength/2)
     const head1 = new Uint16Array([18770,17990,...split32(sz+36),16727,17750])
     const head2 = new Uint16Array([28006,8308,16,0,1,1,44100,0,22664,1,2,16])
     const head3 = new Uint16Array([24932,24948,...split32(sz)])
-    const r = new Uint8Array(2*Math.ceil(sz/2)+44);
+    const r = new Uint8Array(sz+44);
     r.set(to8(head1),0);r.set(to8(head2),12);r.set(to8(head3),36)
     r.set(file.bytes,44)
     outputFiles.push({name: file.name.split(".").slice(0, -1).join(".") + ".wav", bytes: r})
