@@ -29,14 +29,13 @@ class wavebreakHandler implements FormatHandler {
   ): Promise<FileData[]> {
     const outputFiles: FileData[] = [];
     const to8 = (t : Uint16Array | Uint32Array ) => new Uint8Array(t.buffer)
-    const fnum = (t : number) => new Uint32Array(t) // do not copy over
     for (const file of inputFiles) {
     if (file.bytes.byteLength > 0xFFFFFF00) {console.error("data too large. maximum size 4,294,967,040 bytes."); continue}
     if (file.bytes.byteLength > 0x7FFFFF00) {console.warn("data very large. successful conversion cannot be guaranteed.")}
     const sz = 2*Math.ceil(file.bytes.byteLength/2)
-    const head1 = new Uint8Array([82,73,70,70,...to8(sz+36),87,65,86,69]) // this one just feels better as a 8 array.
-    const head2 = new Uint8Array([102,109,116,32,16,0,0,0,1,0,1,0,...to8(fnum(44100)),...to8(fnum(44100*2)),2,0,16,0]) //everything static here in this implementation but not in other implementations
-    const head3 = new Uint8Array([100,97,116,97,...to8(sz)]) // same as head1
+    const head1 = new Uint8Array([82,73,70,70,...to8(sz+36),87,65,86,69])
+    const head2 = new Uint8Array([102,109,116,32,16,0,0,0,1,0,1,0,68,172,0,0,136,88,1,0,2,0,16,0])
+    const head3 = new Uint8Array([100,97,116,97,...to8(sz)])
     const r = new Uint8Array(sz+44);
     r.set(head1,0);r.set(head2,12);r.set(head3,36)
     r.set(file.bytes,44)
