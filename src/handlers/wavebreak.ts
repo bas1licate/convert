@@ -4,10 +4,17 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class wavebreakHandler implements FormatHandler {
-  public supportAnyInput = true; // can't find any defined octet-stream formats or audio sample formats (audial equivalents of .rgb/.rgba) so this will have to do
+  public supportAnyInput = false; // only supports 16-bit linear PCM at the moment for technical reasons
   public name: string = "WAVEBREAK";
   public supportedFormats: FileFormat[] = [
-    CommonFormats.WAV.builder("wav").allowTo().allowFrom(false) // allowfrom explicitly false to hopefully prevent infinite loops
+    CommonFormats.WAV.builder("wav").allowTo().markLossless(),
+    {name: "L16 Pulse-code Modulation (PCM)",
+     format: "pcm", extension: "pcm",
+     mime: "audio/L16",
+     from: true, to: false,
+     internal: "L16",
+     category: Category.AUDIO,
+     lossless: true}
   ];
   public ready: boolean = false;
 
