@@ -4,7 +4,6 @@ import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class wavebreakHandler implements FormatHandler {
-  public supportAnyInput = false; // only supports 16-bit linear PCM at the moment for technical reasons
   public name: string = "WAVEBREAK";
   public supportedFormats: FileFormat[] = [
     CommonFormats.WAV.builder("wav").allowTo().markLossless(),
@@ -12,7 +11,7 @@ class wavebreakHandler implements FormatHandler {
      format: "pcm", extension: "pcm",
      mime: "audio/L16", // will always interpret them as little-endian 44.1kHz, also for technical reasons
      from: true, to: false,
-     internal: "L16",
+     internal: "L16", // source for audio/L16: RFC 2586
      category: Category.AUDIO,
      lossless: true}
   ];
