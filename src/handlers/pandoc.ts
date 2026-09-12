@@ -1,11 +1,19 @@
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
+import type { ConvertContext } from "../ui/ProgressStore.js";
 import CommonFormats from "src/CommonFormats.ts";
 import mime from "mime";
 import normalizeMimeType from "../normalizeMimeType.ts";
-import { BadMagicError, EOFError, InitializationError } from "src/errors.ts";
+import { InitializationError } from "src/errors.ts";
+
+import {
+  bundleTypstAssets,
+  collectTypstAssetFiles,
+  normalizeTypstAssetPaths,
+  postprocessTypstFromPandoc,
+  preprocessHtmlForTypst,
+} from "./typst.ts";
 
 class pandocHandler implements FormatHandler {
-
   static formatNames: Map<string, string> = new Map([
     ["ansi", "ANSI terminal"],
     ["asciidoc", "modern AsciiDoc"],
@@ -61,7 +69,7 @@ class pandocHandler implements FormatHandler {
     ["opendocument", "OpenDocument XML"],
     ["opml", "OPML"],
     ["org", "Emacs Org mode"],
-    ["pdf", "PDF via Typst"],
+    ["pdf", CommonFormats.PDF.name],
     ["text", CommonFormats.TEXT.name],
     ["pod", "Perl POD"],
     ["pptx", CommonFormats.PPTX.name],
@@ -155,13 +163,17 @@ class pandocHandler implements FormatHandler {
   public ready: boolean = false;
 
   private query?: (options: any) => Promise<any>;
-  private convert?: (options: any, stdin: any, files: any) => Promise<{
+  private convert?: (
+    options: any,
+    stdin: any,
+    files: any,
+  ) => Promise<{
     stdout: string;
     stderr: string;
     warnings: any;
   }>;
 
-  async init () {
+  async init() {
     const { query, convert } = await import("./pandoc/pandoc.js");
     this.query = query;
     this.convert = convert;
@@ -173,15 +185,15 @@ class pandocHandler implements FormatHandler {
     outputFormats.push("mathml");
 
     const allFormats = new Set(inputFormats);
-    outputFormats.forEach(format => allFormats.add(format));
+    outputFormats.forEach((format) => allFormats.add(format));
 
     this.supportedFormats = [];
     for (const internal of allFormats) {
       let format = internal;
-      // PDF doesn't seem to work, at least with this configuration
-      if (format === "pdf") continue;
       // RevealJS seems to hang forever?
       if (format === "revealjs") continue;
+      // Typst compilation is handled by the dedicated Typst handler.
+      if (format === "pdf") continue;
       // Adjust plaintext format name to match other handlers
       if (format === "plain") format = "text";
       const name = pandocHandler.formatNames.get(format) || format;
@@ -190,102 +202,147 @@ class pandocHandler implements FormatHandler {
       const categories: string[] = [];
       if (format === "xlsx") categories.push("spreadsheet");
       else if (format === "pptx") categories.push("presentation");
-      if (
-        name.toLowerCase().includes("text")
-        || mimeType === "text/plain"
-      ) {
+      if (name.toLowerCase().includes("text") || mimeType === "text/plain") {
         categories.push("text");
       } else {
         categories.push("document");
       }
-      const isOfficeDocument = format === "docx"
-        || format === "xlsx"
-        || format === "pptx"
-        || format === "odt"
-        || format === "ods"
-        || format === "odp";
+      const isOfficeDocument =
+        format === "docx" ||
+        format === "xlsx" ||
+        format === "pptx" ||
+        format === "odt" ||
+        format === "ods" ||
+        format === "odp";
+      const isEpubInput = format === "epub" || format === "epub2" || format === "epub3";
       this.supportedFormats.push({
-        name, format, extension,
+        name,
+        format,
+        extension,
         mime: mimeType,
-        from: inputFormats.includes(internal),
+        from: inputFormats.includes(internal) && !isEpubInput,
         to: outputFormats.includes(internal),
         internal,
         category: categories.length === 1 ? categories[0] : categories,
-        lossless: !isOfficeDocument
+        lossless: !isOfficeDocument,
       });
     }
 
     // Move HTML up, it's the only format that can embed resources
-    const htmlIndex = this.supportedFormats.findIndex(c => c.internal === "html");
+    const htmlIndex = this.supportedFormats.findIndex((c) => c.internal === "html");
     const htmlFormat = this.supportedFormats[htmlIndex];
     this.supportedFormats.splice(htmlIndex, 1);
     this.supportedFormats.unshift(htmlFormat);
+    const typstIndex = this.supportedFormats.findIndex((c) => c.internal === "typst");
+    if (typstIndex !== -1) {
+      const typstFormat = this.supportedFormats[typstIndex];
+      this.supportedFormats.splice(typstIndex, 1);
+      this.supportedFormats.splice(1, 0, typstFormat);
+    }
     // pandoc internal formats is almost always never what the user wants
-    const jsonXmlFormats = this.supportedFormats.filter(c =>
-      c.mime === "application/json"
-      || c.mime === "application/xml"
+    const jsonXmlFormats = this.supportedFormats.filter(
+      (c) => c.mime === "application/json" || c.mime === "application/xml",
     );
-    this.supportedFormats = this.supportedFormats.filter(c =>
-      c.mime !== "application/json"
-      && c.mime !== "application/xml"
+    this.supportedFormats = this.supportedFormats.filter(
+      (c) => c.mime !== "application/json" && c.mime !== "application/xml",
     );
     this.supportedFormats.push(...jsonXmlFormats);
 
     this.ready = true;
   }
 
-  async doConvert (
+  async doConvert(
     inputFiles: FileData[],
     inputFormat: FileFormat,
-    outputFormat: FileFormat
+    outputFormat: FileFormat,
+    args?: string[],
+    ctx?: ConvertContext,
   ): Promise<FileData[]> {
-    if (
-      !this.ready
-      || !this.query
-      || !this.convert
-    ) throw new InitializationError("Handler not initialized.");
+    if (!this.ready || !this.query || !this.convert)
+      throw new InitializationError("Handler not initialized.");
 
     const outputFiles: FileData[] = [];
 
-    for (const inputFile of inputFiles) {
+    ctx?.log(`Initialising Pandoc for ${inputFormat.name} -> ${outputFormat.name}...`);
 
-      const files = {
-        [inputFile.name]: new Blob([inputFile.bytes as BlobPart])
+    let i = 0;
+    for (const inputFile of inputFiles) {
+      const vfsInputName = inputFile.name.replace(/^.*[/\\]/, "") || "input.bin";
+      const shouldNormalizeHtmlForTypst =
+        inputFormat.internal === "html" &&
+        (outputFormat.internal === "pdf" || outputFormat.internal === "typst");
+      const sourceBytes = shouldNormalizeHtmlForTypst
+        ? new TextEncoder().encode(
+            preprocessHtmlForTypst(new TextDecoder().decode(inputFile.bytes)),
+          )
+        : inputFile.bytes;
+      const files: Record<string, any> = {
+        [vfsInputName]: new Blob([sourceBytes as BlobPart]),
       };
 
-      let options = {
+      const progressMsg = `Converting ${inputFile.name}...`;
+      ctx?.progress(progressMsg, i / inputFiles.length);
+      ctx?.log(progressMsg);
+
+      const options: Record<string, any> = {
         from: inputFormat.internal,
         to: outputFormat.internal,
-        "input-files": [inputFile.name],
+        "input-files": [vfsInputName],
         "output-file": "output",
         "embed-resources": true,
         "html-math-method": "mathjax",
-      }
+      };
 
-      // Set flag for outputting mathml
       if (outputFormat.internal === "mathml") {
         options.to = "html";
         options["html-math-method"] = "mathml";
       }
 
-      const { stderr } = await this.convert(options, null, files);
+      if (outputFormat.internal === "typst") {
+        options.standalone = true;
+        options["extract-media"] = "media";
+      }
 
-      if (stderr) throw stderr;
+      const { stderr, warnings } = await this.convert(options, null, files);
+
+      if (stderr) {
+        ctx?.log(`Pandoc Error: ${stderr}`, "error");
+        throw new Error(stderr);
+      }
+
+      if (warnings && warnings.length > 0) {
+        for (const warning of warnings) {
+          ctx?.log(`Pandoc Warning: ${JSON.stringify(warning)}`, "warn");
+        }
+      }
 
       const outputBlob = files.output;
-      if (!(outputBlob instanceof Blob)) continue;
+      if (!(outputBlob instanceof Blob)) {
+        ctx?.log(`Pandoc failed to produce output for ${inputFile.name}`, "error");
+        continue;
+      }
 
       const arrayBuffer = await outputBlob.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
+      let bytes = new Uint8Array(arrayBuffer);
+      if (outputFormat.internal === "typst") {
+        const normalizedTypst = normalizeTypstAssetPaths(
+          postprocessTypstFromPandoc(new TextDecoder().decode(bytes)),
+          await collectTypstAssetFiles(files, [vfsInputName]),
+        );
+        const bundledTypst = await bundleTypstAssets(normalizedTypst, files, [vfsInputName]);
+        bytes = new TextEncoder().encode(bundledTypst);
+      }
       const name = inputFile.name.split(".").slice(0, -1).join(".") + "." + outputFormat.extension;
 
       outputFiles.push({ bytes, name });
-
+      i++;
     }
+
+    ctx?.progress("Conversion complete!", 1);
+    ctx?.log(`Successfully converted ${outputFiles.length} files.`);
 
     return outputFiles;
   }
-
 }
 
 export default pandocHandler;
