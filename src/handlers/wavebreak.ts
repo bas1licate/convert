@@ -1,11 +1,9 @@
-// file: wavebreaker.ts
-
 import type { ConvertContext } from "src/ui/ProgressStore.ts";
 import type { FileData, FileFormat, FormatHandler } from "../FormatHandler.ts";
 import CommonFormats, { Category } from "src/CommonFormats.ts";
 
 class wavebreakHandler implements FormatHandler {
-  public name: string = "WAVEBREAK";
+  public name: string = "wavebreak";
   public supportedFormats: FileFormat[] = [
     CommonFormats.WAV.builder("wav").allowTo().markLossless(),
     {
