@@ -7,11 +7,11 @@ class wavebreakHandler implements FormatHandler {
   public name: string = "WAVEBREAK";
   public supportedFormats: FileFormat[] = [
     CommonFormats.WAV.builder("wav").allowTo().markLossless(),
-    {name: "L16 Pulse-code Modulation (PCM)",
-     format: "pcm", extension: "pcm",
-     mime: "audio/L16", // will always interpret them as little-endian 44.1kHz, also for technical reasons
+    {name: "PCM signed 16-bit little-endian", // from ffmpeg
+     format: "s16le", extension: "s16le",
+     mime: "audio/s16le", // interpreted as 44.1 kHz mono
      from: true, to: false,
-     internal: "L16", // source for audio/L16: RFC 2586
+     internal: "s16le",
      category: Category.AUDIO,
      lossless: true}
   ];
