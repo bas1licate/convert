@@ -48,7 +48,7 @@ class wavebreakHandler implements FormatHandler {
       // oxfmt-ignore
       const head2 = new Uint8Array([102, 109, 116, 32, 16, 0, 0, 0, (1+2*fn), 0, 1, 0, ...n32(is8?22500:44100), ...n32(is8?22500:44100*bd/8), bd/8, 0, bd, 0]);
       const head3 = new Uint8Array([100, 97, 116, 97, ...n32(sz)]);
-      const r = new Uint8Array(sz + 44).fill(0) // just filling it with zeroes here
+      const r = new Uint8Array(sz + 44).fill(0); // just filling it with zeroes here
       r.set(head1, 0);
       r.set(head2, 12);
       r.set(head3, 36);
